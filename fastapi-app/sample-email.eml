@@ -1,0 +1,44 @@
+From: security@example.com
+To: analyst@example.net
+Date: Fri, 11 Sep 2026 10:30:00 +0000
+Subject: Suspicious login notification
+Message-ID: <sample-20260911-103000@example.com>
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="mixed-boundary-001"
+
+--mixed-boundary-001
+Content-Type: multipart/alternative; boundary="alternative-boundary-001"
+
+--alternative-boundary-001
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 8bit
+
+Hello,
+
+We detected a sign-in to your account from a new device.
+
+Review the activity at https://example.com/account/activity
+
+Regards,
+Security Team
+--alternative-boundary-001
+Content-Type: text/html; charset="UTF-8"
+Content-Transfer-Encoding: 8bit
+
+<html>
+  <body>
+    <p>Hello,</p>
+    <p>We detected a sign-in to your account from a new device.</p>
+    <p><a href="https://example.com/account/activity">Review the activity</a></p>
+    <p>Regards,<br>Security Team</p>
+  </body>
+</html>
+--alternative-boundary-001--
+
+--mixed-boundary-001
+Content-Type: text/plain; name="security-details.txt"
+Content-Disposition: attachment; filename="security-details.txt"
+Content-Transfer-Encoding: base64
+
+U2FtcGxlIGF0dGFjaG1lbnQgZm9yIHBhcnNlciB0ZXN0aW5nLgo=
+--mixed-boundary-001--
