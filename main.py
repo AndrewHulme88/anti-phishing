@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 from email.utils import getaddresses
 
 from fastapi import FastAPI, UploadFile, File, HTTPException
@@ -9,11 +10,24 @@ app = FastAPI()
 MAX_EMAIL_SIZE = 10 * 1024 * 1024  # 10 MB
 
 
-def normalize_recipients(header_value: str | None) -> list[str]:
+def normalize_text(value: str | Sequence[str] | None) -> str | None:
+    """Convert parser fields, which may be returned as lists, to response text."""
+    if value is None:
+        return None
+    if isinstance(value, str):
+        return value
+
+    parts = [part for part in value if isinstance(part, str) and part]
+    return "\n".join(parts) or None
+
+
+def normalize_recipients(header_value: str | Sequence[str] | None) -> list[str]:
     if not header_value:
         return []
 
-    return [address for _, address in getaddresses([header_value]) if address]
+    values = [header_value] if isinstance(header_value, str) else header_value
+    return [address for _, address in getaddresses(values) if address]
+
 
 @app.get("/health")
 def health_check():
@@ -46,13 +60,13 @@ async def parse_email_file(file: UploadFile = File(...)):
 
         return {
             "message": {
-                "subject": email_object.subject,
-                "from": email_object.headers.get("From"),
+                "subject": normalize_text(email_object.subject),
+                "from": normalize_text(email_object.headers.get("From")),
                 "recipients": normalize_recipients(email_object.headers.get("To")),
-                "date": email_object.headers.get("Date")
+                "date": normalize_text(email_object.headers.get("Date"))
             },
-            "text_body": email_object.text_plain,
-            "html_body": email_object.text_html,
+            "text_body": normalize_text(email_object.text_plain),
+            "html_body": normalize_text(email_object.text_html),
             "attachments": [
                 {"filename": att.filename, "content_type": att.mimetype}
                 for att in email_object.attachments

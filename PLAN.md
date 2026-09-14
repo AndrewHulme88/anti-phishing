@@ -9,10 +9,10 @@ Provide developers with a versioned API that accepts an `.eml` file and returns 
 ### Phase 1: Make the parser a reliable API
 
 - [✅] Rename or introduce the endpoint as `POST /v1/analyze`.
-- [ ] Define Pydantic response models for message metadata, URLs, attachments, findings, risk, and errors.
-- [ ] Return HTTP 400 for invalid or corrupted email files.
-- [ ] Validate upload size and reject unsupported input safely.
-- [ ] Normalize headers, addresses, dates, body content, URLs, and attachment metadata.
+- [✅] Define Pydantic response models for message metadata, URLs, attachments, findings, risk, and errors.
+- [✅] Return HTTP 400 for invalid or corrupted email files.
+- [✅] Validate upload size and reject unsupported input safely.
+- [✅] Normalize headers, addresses, dates, body content, URLs, and attachment metadata.
 - [ ] Keep raw email content out of responses and logs by default.
 
 ### Phase 2: Add deterministic phishing analysis
