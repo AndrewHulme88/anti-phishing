@@ -28,11 +28,11 @@ Provide developers with a versioned API that accepts an `.eml` file and returns 
 
 ### Phase 3: Test the security boundary
 
-- [ ] Add tests for normal text email, HTML email, multipart messages, and attachments.
-- [ ] Add malformed MIME, missing headers, duplicate headers, encoded headers, and oversized input cases.
-- [ ] Add tests for spoofed sender fields, deceptive links, dangerous filenames, and header injection attempts.
-- [ ] Verify that analysis is deterministic for the same input.
-- [ ] Confirm that attachment contents are never executed or unnecessarily persisted.
+- [✅] Add tests for normal text email, HTML email, multipart messages, and attachments.
+- [✅] Add malformed MIME, missing headers, duplicate headers, encoded headers, and oversized input cases.
+- [✅] Add tests for spoofed sender fields, deceptive links, dangerous filenames, and header injection attempts.
+- [✅] Verify that analysis is deterministic for the same input.
+- [✅] Confirm that attachment contents are never executed or unnecessarily persisted.
 
 ### Phase 4: Developer release
 

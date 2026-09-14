@@ -1,6 +1,8 @@
 import asyncio
+import base64
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 import httpx
 
@@ -37,6 +39,96 @@ class AnalyzeEndpointTests(unittest.TestCase):
         self.assertEqual(payload["findings"], [])
         self.assertEqual(payload["risk"], {"score": 0, "level": "low"})
 
+    def test_analyzes_a_normal_plain_text_email(self) -> None:
+        response = self.request(
+            "plain.eml",
+            b"From: sender@example.com\r\n"
+            b"To: analyst@example.net\r\n"
+            b"Subject: Routine update\r\n"
+            b"\r\n"
+            b"The status page is https://status.example.com/current.\r\n",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload["text_body"].strip(), "The status page is https://status.example.com/current.")
+        self.assertIsNone(payload["html_body"])
+        self.assertEqual(payload["urls"], [{"visible_text": None, "destination": "https://status.example.com/current"}])
+        self.assertEqual(payload["findings"], [])
+
+    def test_extracts_html_link_destination_and_visible_text(self) -> None:
+        response = self.request(
+            "html.eml",
+            b"From: sender@example.com\r\n"
+            b"To: analyst@example.net\r\n"
+            b"Content-Type: text/html; charset=utf-8\r\n"
+            b"\r\n"
+            b"<p><a href=\"https://destination.example/reset\">portal.example</a></p>",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(
+            payload["urls"],
+            [{"visible_text": "portal.example", "destination": "https://destination.example/reset"}],
+        )
+        self.assertIn("URL_VISIBLE_TEXT_MISMATCH", {item["code"] for item in payload["findings"]})
+
+    def test_reports_attachment_metadata_without_attachment_content(self) -> None:
+        attachment_content = b"this attachment must remain inert"
+        encoded_attachment = base64.b64encode(attachment_content)
+        response = self.request(
+            "attachment.eml",
+            b"From: sender@example.com\r\n"
+            b"To: analyst@example.net\r\n"
+            b"MIME-Version: 1.0\r\n"
+            b"Content-Type: multipart/mixed; boundary=boundary\r\n"
+            b"\r\n"
+            b"--boundary\r\nContent-Type: text/plain\r\n\r\nHello\r\n"
+            b"--boundary\r\n"
+            b"Content-Type: application/octet-stream; name=report.txt\r\n"
+            b"Content-Disposition: attachment; filename=report.txt\r\n"
+            b"Content-Transfer-Encoding: base64\r\n\r\n"
+            + encoded_attachment
+            + b"\r\n--boundary--\r\n",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload["attachments"], [{"filename": "report.txt", "content_type": "application/octet-stream", "size": len(attachment_content)}])
+        self.assertNotIn(attachment_content.decode(), response.text)
+
+    def test_accepts_missing_optional_headers(self) -> None:
+        response = self.request("minimal.eml", b"To: analyst@example.net\r\n\r\nHello")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["message"], {"subject": None, "from": None, "recipients": ["analyst@example.net"], "date": None, "reply_to": None})
+
+    def test_handles_duplicate_and_encoded_headers_deterministically(self) -> None:
+        response = self.request(
+            "headers.eml",
+            b"From: =?utf-8?b?Sm9zw6kgVXNlcg==?= <jose@example.com>\r\n"
+            b"From: second@example.com\r\n"
+            b"To: first@example.com\r\n"
+            b"To: second@example.com\r\n"
+            b"Subject: =?utf-8?q?Urgent_=E2=9A=A0=EF=B8=8F?=\r\n"
+            b"Subject: ignored\r\n\r\nHello",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["message"], {"subject": "Urgent ⚠️", "from": "José User <jose@example.com>", "recipients": ["first@example.com", "second@example.com"], "date": None, "reply_to": None})
+
+    def test_rejects_malformed_multipart_mime(self) -> None:
+        response = self.request(
+            "truncated.eml",
+            b"From: sender@example.com\r\nTo: analyst@example.net\r\n"
+            b"MIME-Version: 1.0\r\nContent-Type: multipart/mixed; boundary=broken\r\n\r\n"
+            b"--broken\r\nContent-Type: text/plain\r\n\r\nThis boundary never closes.",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json()["detail"]["code"], "INVALID_EMAIL")
+
     def test_rejects_unsupported_file_type(self) -> None:
         response = self.request("message.txt", b"From: sender@example.com\n\nHello")
 
@@ -48,3 +140,41 @@ class AnalyzeEndpointTests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json()["detail"]["code"], "INVALID_EMAIL")
+
+    def test_rejects_oversized_input_before_parsing(self) -> None:
+        with patch("app.api.MAX_EMAIL_SIZE", 5):
+            response = self.request("large.eml", b"From: sender@example.com\r\n\r\nHello")
+
+        self.assertEqual(response.status_code, 413)
+        self.assertEqual(response.json()["detail"]["code"], "FILE_TOO_LARGE")
+
+    def test_flags_spoofed_sender_deceptive_links_and_dangerous_filename(self) -> None:
+        response = self.request("phishing.eml", Path("sample-phishing-email.eml").read_bytes())
+
+        self.assertEqual(response.status_code, 200)
+        codes = {item["code"] for item in response.json()["findings"]}
+        self.assertTrue({"SENDER_REPLY_TO_DOMAIN_MISMATCH", "URL_IP_ADDRESS", "URL_VISIBLE_TEXT_MISMATCH", "ATTACHMENT_DOUBLE_EXTENSION"}.issubset(codes))
+
+    def test_header_injection_does_not_expose_unmodeled_headers(self) -> None:
+        response = self.request(
+            "injected-header.eml",
+            b"From: sender@example.com\r\nTo: analyst@example.net\r\n"
+            b"Subject: harmless\r\nX-Injected: secret-value\r\nBcc: hidden@example.net\r\n\r\nHello",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertNotIn("X-Injected", response.text)
+        self.assertNotIn("secret-value", response.text)
+        self.assertNotIn("hidden@example.net", response.text)
+        self.assertEqual(payload["message"]["recipients"], ["analyst@example.net"])
+
+    def test_analysis_is_deterministic_for_the_same_input(self) -> None:
+        content = Path("sample-phishing-email.eml").read_bytes()
+
+        first = self.request("phishing.eml", content)
+        second = self.request("phishing.eml", content)
+
+        self.assertEqual(first.status_code, 200)
+        self.assertEqual(second.status_code, 200)
+        self.assertEqual(first.json(), second.json())

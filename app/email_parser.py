@@ -1,6 +1,8 @@
 import re
 from collections.abc import Sequence
 from datetime import UTC
+from email import policy
+from email.parser import BytesParser
 from email.utils import getaddresses, parsedate_to_datetime
 from html.parser import HTMLParser
 from urllib.parse import urlsplit, urlunsplit
@@ -221,8 +223,7 @@ def analyze_email(message: dict[str, object], text_body: str | None, html_body: 
     spf = authentication_status(auth_results, "spf") or received_spf_status(header_values(headers, "Received-SPF"))
     dkim = authentication_status(auth_results, "dkim")
     dmarc = authentication_status(auth_results, "dmarc")
-    # A signature alone is not proof of a pass, but retaining its presence makes
-    # available authentication data explicit when no result header exists.
+    # A signature alone is not proof of a pass, but retaining its presence makes available authentication data explicit when no result header exists.
     if dkim is None and header_values(headers, "DKIM-Signature"):
         dkim = "present"
     authentication = {"spf": spf, "dkim": dkim, "dmarc": dmarc, "results": auth_results}
@@ -242,6 +243,13 @@ def attachment_size(attachment: object) -> int | None:
 
 def parse_email_content(content: bytes) -> dict[str, object]:
     """Parse an email and convert parser-specific values into the API contract."""
+    # fast-mail-parser is intentionally permissive. Use the standard library's
+    # defect reporting as an input-boundary check so truncated multipart bodies
+    # do not get treated as complete messages.
+    structure = BytesParser(policy=policy.default).parsebytes(content)
+    if structure.defects:
+        raise ValueError("Email contains malformed MIME structure.")
+
     email_object = parse_email(content)
     if not email_object.headers:
         raise ValueError("Email has no RFC 5322 headers.")
