@@ -17,14 +17,14 @@ Provide developers with a versioned API that accepts an `.eml` file and returns 
 
 ### Phase 2: Add deterministic phishing analysis
 
-- [ ] Extract URLs from plain text and HTML, including visible link text and destination.
-- [ ] Compare `From`, `Reply-To`, display names, and destination domains.
-- [ ] Flag mismatched visible links, IP-address URLs, punycode, URL shorteners, unsafe schemes, and HTTP links.
-- [ ] Detect urgency, credential requests, account suspension threats, payment pressure, and requests for sensitive information.
-- [ ] Flag risky attachment extensions and suspicious double extensions.
-- [ ] Parse SPF, DKIM, DMARC, and `Authentication-Results` headers when available.
-- [ ] Emit stable finding codes, severity, title, evidence, and remediation context.
-- [ ] Calculate a documented score and map it to `low`, `medium`, or `high` risk.
+- [✅] Extract URLs from plain text and HTML, including visible link text and destination.
+- [✅] Compare `From`, `Reply-To`, display names, and destination domains.
+- [✅] Flag mismatched visible links, IP-address URLs, punycode, URL shorteners, unsafe schemes, and HTTP links.
+- [✅] Detect urgency, credential requests, account suspension threats, payment pressure, and requests for sensitive information.
+- [✅] Flag risky attachment extensions and suspicious double extensions.
+- [✅] Parse SPF, DKIM, DMARC, and `Authentication-Results` headers when available.
+- [✅] Emit stable finding codes, severity, title, evidence, and remediation context.
+- [✅] Calculate a documented score and map it to `low`, `medium`, or `high` risk.
 
 ### Phase 3: Test the security boundary
 

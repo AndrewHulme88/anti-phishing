@@ -1,0 +1,50 @@
+From: "Example Bank Security" <alerts@attacker.invalid>
+Reply-To: verification@reply-handler.invalid
+To: analyst@example.net
+Date: Mon, 14 Sep 2026 09:15:00 +0000
+Subject: URGENT: Your account will be suspended today
+Message-ID: <sample-phishing-20260914@example.invalid>
+MIME-Version: 1.0
+Authentication-Results: mail.example.net; spf=fail smtp.mailfrom=attacker.invalid; dkim=fail header.d=attacker.invalid; dmarc=fail header.from=example-bank.invalid
+Content-Type: multipart/mixed; boundary="mixed-boundary-phishing"
+
+--mixed-boundary-phishing
+Content-Type: multipart/alternative; boundary="alternative-boundary-phishing"
+
+--alternative-boundary-phishing
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 8bit
+
+URGENT: Your account will be suspended today.
+
+To prevent suspension, sign in immediately and enter your password, credit card
+number, and date of birth. Pay the overdue invoice now.
+
+Open http://192.0.2.25/verify-account to verify your account.
+
+--alternative-boundary-phishing
+Content-Type: text/html; charset="UTF-8"
+Content-Transfer-Encoding: 8bit
+
+<html>
+  <body>
+    <p><strong>URGENT:</strong> Your account will be suspended today.</p>
+    <p>
+      Sign in immediately and enter your password, credit card number, and date
+      of birth. Pay the overdue invoice now.
+    </p>
+    <p>
+      <a href="https://xn--exampl-2we.invalid/verify">https://example-bank.invalid</a>
+    </p>
+    <p><a href="javascript:void(0)">Open secure verification</a></p>
+  </body>
+</html>
+--alternative-boundary-phishing--
+
+--mixed-boundary-phishing
+Content-Type: application/octet-stream; name="invoice.pdf.exe"
+Content-Disposition: attachment; filename="invoice.pdf.exe"
+Content-Transfer-Encoding: base64
+
+VGhpcyBpcyBhIGhhcm1sZXNzIHNhbXBsZSBhdHRhY2htZW50LCBub3QgYW4gZXhlY3V0YWJsZSBmaWxlLgo=
+--mixed-boundary-phishing--

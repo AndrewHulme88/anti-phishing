@@ -10,6 +10,13 @@ class URLInfo(BaseModel):
     visible_text: str | None = None
     destination: str
 
+
+class AuthenticationInfo(BaseModel):
+    spf: str | None = None
+    dkim: str | None = None
+    dmarc: str | None = None
+    results: list[str] = Field(default_factory=list)
+
 class Finding(BaseModel):
     code: str
     severity: Literal["low", "medium", "high"]
@@ -33,6 +40,7 @@ class MessageInfo(BaseModel):
     sender: str | None = Field(alias="from")
     recipients: list[str]
     date: str | None
+    reply_to: str | None = None
 
 class AnalysisResponse(BaseModel):
     message: MessageInfo
@@ -40,5 +48,6 @@ class AnalysisResponse(BaseModel):
     html_body: str | None
     urls: list[URLInfo]
     attachments: list[AttachmentInfo]
+    authentication: AuthenticationInfo
     findings: list[Finding]
     risk: RiskAssessment

@@ -1,6 +1,6 @@
 # Phishing Email Analyzer
 
-A FastAPI service that accepts an `.eml` email file and returns normalized message metadata, text and HTML bodies, URLs, and attachment metadata. Phishing findings and risk scoring are reserved for the next development phase.
+A FastAPI service that accepts an `.eml` email file and returns normalized message metadata, indicators, explainable deterministic phishing findings, authentication results, and a risk assessment.
 
 ## Requirements
 
@@ -32,6 +32,13 @@ With the server running, submit the included sample email:
 ```bash
 curl -X POST http://127.0.0.1:8000/v1/analyze \
   -F "file=@sample-email.eml;type=message/rfc822"
+```
+
+To exercise the phishing-analysis rules, submit the sanitized suspicious sample:
+
+```bash
+curl -X POST http://127.0.0.1:8000/v1/analyze \
+  -F "file=@sample-phishing-email.eml;type=message/rfc822"
 ```
 
 The endpoint accepts `.eml` files up to 10 MB.
@@ -69,3 +76,9 @@ uv run python -m unittest discover -s tests -v
 ## Privacy and safety
 
 Uploaded email bytes are parsed in memory and are not included in API responses or application logs. The service does not execute attachments or visit extracted URLs.
+
+## Deterministic analysis
+
+The service performs no network lookups. It flags sender/Reply-To mismatches, deceptive or unsafe links, common social-engineering language, risky attachment names, and failed SPF, DKIM, or DMARC results reported in `Authentication-Results`. Each finding has a stable code, severity, evidence, and remediation.
+
+Risk is additive and capped at 100: low-severity findings add 5 points, medium add 12, and high add 25. Scores below 20 are `low`, 20–49 are `medium`, and 50 or greater are `high`.
