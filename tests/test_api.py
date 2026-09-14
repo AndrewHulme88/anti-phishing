@@ -4,7 +4,7 @@ from pathlib import Path
 
 import httpx
 
-from main import app
+from app.api import app
 
 
 class AnalyzeEndpointTests(unittest.TestCase):
