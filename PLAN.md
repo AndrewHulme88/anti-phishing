@@ -13,7 +13,7 @@ Provide developers with a versioned API that accepts an `.eml` file and returns 
 - [✅] Return HTTP 400 for invalid or corrupted email files.
 - [✅] Validate upload size and reject unsupported input safely.
 - [✅] Normalize headers, addresses, dates, body content, URLs, and attachment metadata.
-- [ ] Keep raw email content out of responses and logs by default.
+- [✅] Keep raw email content out of responses and logs by default.
 
 ### Phase 2: Add deterministic phishing analysis
 
