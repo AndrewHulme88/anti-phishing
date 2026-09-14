@@ -7,7 +7,7 @@ app = FastAPI()
 def read_root():
     return {"message": "Hello World"}
 
-@app.post("/parse_email")
+@app.post("/v1/analyze")
 async def parse_email_file(file: UploadFile = File(...)):
     content = await file.read()
 
