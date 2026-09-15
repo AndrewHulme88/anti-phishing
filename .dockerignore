@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 .git
 .venv
 __pycache__
@@ -5,3 +6,10 @@ __pycache__
 tests
 sample-email.eml
 sample-phishing-email.eml
+=======
+fly.toml
+.git/
+__pycache__/
+.envrc
+.venv/
+>>>>>>> cbf6c308f92065efa81129cd2de67247e66d5bc1
