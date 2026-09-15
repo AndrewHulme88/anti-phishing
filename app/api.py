@@ -109,7 +109,6 @@ async def terms_of_service() -> str:
     tags=["Analysis"],
     summary="Analyze an EML message",
     description="Upload one `.eml` file. Analysis is offline and deterministic; attachments and URLs are never executed or fetched.",
-    openapi_extra={"security": [{"ApiKeyAuth": []}]},
     responses={
         400: {"model": ErrorResponse, "description": "Empty or malformed email."},
         401: {"model": ErrorResponse, "description": "Missing or invalid API key."},
@@ -166,7 +165,9 @@ def custom_openapi() -> dict[str, object]:
     from fastapi.openapi.utils import get_openapi
 
     schema = get_openapi(title=app.title, version=app.version, description=app.description, routes=app.routes)
-    schema.setdefault("components", {}).setdefault("securitySchemes", {})["ApiKeyAuth"] = api_key_scheme.model_dump(by_alias=True, exclude_none=True, mode="json")
+    if settings.api_key:
+        schema.setdefault("components", {}).setdefault("securitySchemes", {})["ApiKeyAuth"] = api_key_scheme.model_dump(by_alias=True, exclude_none=True, mode="json")
+        schema["paths"]["/v1/analyze"]["post"]["security"] = [{"ApiKeyAuth": []}]
     # FastAPI emits OpenAPI 3.1's contentMediaType for UploadFile. RapidAPI's
     # importer recognizes the widely-supported format=binary convention and
     # renders it as a file-picker in its endpoint playground.

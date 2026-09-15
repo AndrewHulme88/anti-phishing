@@ -214,7 +214,7 @@ class AnalyzeEndpointTests(unittest.TestCase):
         self.assertIn("moonfallsoftware@outlook.com", privacy.text)
         self.assertEqual(terms.status_code, 200)
 
-    def test_openapi_documents_api_key_and_error_responses(self) -> None:
+    def test_openapi_documents_binary_upload_and_error_responses(self) -> None:
         async def send_request() -> httpx.Response:
             transport = httpx.ASGITransport(app=app)
             async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
@@ -222,8 +222,8 @@ class AnalyzeEndpointTests(unittest.TestCase):
 
         schema = asyncio.run(send_request()).json()
         operation = schema["paths"]["/v1/analyze"]["post"]
-        self.assertEqual(operation["security"], [{"ApiKeyAuth": []}])
-        self.assertIn("ApiKeyAuth", schema["components"]["securitySchemes"])
+        self.assertNotIn("security", operation)
+        self.assertNotIn("ApiKeyAuth", schema.get("components", {}).get("securitySchemes", {}))
         self.assertTrue({"401", "429"}.issubset(operation["responses"]))
         upload_schema = schema["components"]["schemas"]["Body_analyze_email_v1_analyze_post"]
         self.assertEqual(upload_schema["properties"]["file"]["format"], "binary")
