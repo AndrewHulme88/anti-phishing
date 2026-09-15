@@ -1,0 +1,7 @@
+From: Example Support <notice@sender.invalid>
+Reply-To: reply@other.invalid
+To: analyst@example.net
+Subject: Sanitized phishing demonstration
+Content-Type: text/html; charset=utf-8
+
+<p>This example is inert and uses reserved domains.</p><p><a href="https://xn--exampl-2we.invalid/verify">https://example.com</a></p>

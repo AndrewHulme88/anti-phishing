@@ -6,17 +6,19 @@ from unittest.mock import patch
 
 import httpx
 
-from app.api import app
+from app.api import RateLimiter, app
+from app.config import Settings
 
 
 class AnalyzeEndpointTests(unittest.TestCase):
-    def request(self, filename: str, content: bytes) -> httpx.Response:
+    def request(self, filename: str, content: bytes, headers: dict[str, str] | None = None) -> httpx.Response:
         async def send_request() -> httpx.Response:
             transport = httpx.ASGITransport(app=app)
             async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
                 return await client.post(
                     "/v1/analyze",
                     files={"file": (filename, content, "message/rfc822")},
+                    headers=headers,
                 )
 
         return asyncio.run(send_request())
@@ -147,6 +149,58 @@ class AnalyzeEndpointTests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 413)
         self.assertEqual(response.json()["detail"]["code"], "FILE_TOO_LARGE")
+
+    def test_health_reports_release_metadata(self) -> None:
+        async def send_request() -> httpx.Response:
+            transport = httpx.ASGITransport(app=app)
+            async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+                return await client.get("/health")
+
+        response = asyncio.run(send_request())
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["status"], "ok")
+        self.assertEqual(response.json()["version"], "v1")
+
+    def test_rate_limiter_rejects_requests_over_its_limit(self) -> None:
+        limiter = RateLimiter(limit=1, window_seconds=60)
+        self.assertEqual(limiter.check("client"), (True, 0, 0))
+        allowed, remaining, retry_after = limiter.check("client")
+        self.assertFalse(allowed)
+        self.assertEqual(remaining, 0)
+        self.assertGreater(retry_after, 0)
+
+    def test_rapidapi_mode_rejects_requests_that_bypass_the_proxy(self) -> None:
+        rapidapi_settings = Settings(
+            api_key=None,
+            rapidapi_proxy_secret="rapid-secret",
+            max_upload_size=10 * 1024 * 1024,
+            rate_limit_enabled=False,
+            rate_limit_requests=60,
+            rate_limit_window_seconds=60,
+        )
+        with patch("app.api.settings", rapidapi_settings):
+            rejected = self.request("message.eml", b"From: sender@example.com\r\n\r\nHello")
+            accepted = self.request(
+                "message.eml",
+                b"From: sender@example.com\r\n\r\nHello",
+                headers={"X-RapidAPI-Proxy-Secret": "rapid-secret"},
+            )
+
+        self.assertEqual(rejected.status_code, 401)
+        self.assertEqual(rejected.json()["detail"]["code"], "INVALID_PROXY_SECRET")
+        self.assertEqual(accepted.status_code, 200)
+
+    def test_openapi_documents_api_key_and_error_responses(self) -> None:
+        async def send_request() -> httpx.Response:
+            transport = httpx.ASGITransport(app=app)
+            async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+                return await client.get("/openapi.json")
+
+        schema = asyncio.run(send_request()).json()
+        operation = schema["paths"]["/v1/analyze"]["post"]
+        self.assertEqual(operation["security"], [{"ApiKeyAuth": []}])
+        self.assertIn("ApiKeyAuth", schema["components"]["securitySchemes"])
+        self.assertTrue({"401", "429"}.issubset(operation["responses"]))
 
     def test_flags_spoofed_sender_deceptive_links_and_dangerous_filename(self) -> None:
         response = self.request("phishing.eml", Path("sample-phishing-email.eml").read_bytes())

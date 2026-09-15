@@ -35,6 +35,12 @@ class ErrorDetail(BaseModel):
 class ErrorResponse(BaseModel):
     detail: ErrorDetail
 
+
+class HealthResponse(BaseModel):
+    status: Literal["ok"]
+    version: str
+    authentication_required: bool
+
 class MessageInfo(BaseModel):
     subject: str | None
     sender: str | None = Field(alias="from")

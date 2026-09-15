@@ -36,12 +36,12 @@ Provide developers with a versioned API that accepts an `.eml` file and returns 
 
 ### Phase 4: Developer release
 
-- [ ] Add API-key authentication and basic rate limiting.
-- [ ] Document request and response examples in OpenAPI and a README.
-- [ ] Add structured logging, health checks, and a configurable maximum upload size.
-- [ ] Add a small collection of sanitized example emails for local testing.
-- [ ] Provide a reproducible install and run command from a clean environment.
-- [ ] Publish a versioned API contract and a short security/privacy policy.
+- [✅] Add API-key authentication and basic rate limiting.
+- [✅] Document request and response examples in OpenAPI and a README.
+- [✅] Add structured logging, health checks, and a configurable maximum upload size.
+- [✅] Add a small collection of sanitized example emails for local testing.
+- [✅] Provide a reproducible install and run command from a clean environment.
+- [✅] Publish a versioned API contract and a short security/privacy policy.
 
 ## Explicitly out of scope for the first release
 

@@ -1,0 +1,6 @@
+From: updates@example.com
+To: analyst@example.net
+Subject: Example account notice
+Content-Type: text/plain; charset=utf-8
+
+This is a sanitized local-test message. Review your account at https://example.com/account.
