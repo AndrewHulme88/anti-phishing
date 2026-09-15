@@ -59,6 +59,8 @@ The process-local rate limiter allows 60 analysis requests per client IP per 60 
 
 For a public RapidAPI listing, use the production container and gateway-only mode in [RAPIDAPI_DEPLOYMENT.md](RAPIDAPI_DEPLOYMENT.md). It validates RapidAPI's proxy secret at the origin and disables the unsuitable per-proxy in-process limiter.
 
+The ready-to-paste marketplace description is in [RAPIDAPI_README.md](RAPIDAPI_README.md).
+
 ### Endpoints
 
 | Method | Path | Description |

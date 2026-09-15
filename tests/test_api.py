@@ -225,6 +225,8 @@ class AnalyzeEndpointTests(unittest.TestCase):
         self.assertEqual(operation["security"], [{"ApiKeyAuth": []}])
         self.assertIn("ApiKeyAuth", schema["components"]["securitySchemes"])
         self.assertTrue({"401", "429"}.issubset(operation["responses"]))
+        upload_schema = schema["components"]["schemas"]["Body_analyze_email_v1_analyze_post"]
+        self.assertEqual(upload_schema["properties"]["file"]["format"], "binary")
 
     def test_flags_spoofed_sender_deceptive_links_and_dangerous_filename(self) -> None:
         response = self.request("phishing.eml", Path("sample-phishing-email.eml").read_bytes())

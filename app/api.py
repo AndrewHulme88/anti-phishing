@@ -160,13 +160,22 @@ async def analyze_email(request: Request, response: Response, file: UploadFile =
 
 
 def custom_openapi() -> dict[str, object]:
-    """Advertise the optional deployment API key in the versioned contract."""
+    """Publish a RapidAPI-compatible versioned API contract."""
     if app.openapi_schema:
         return app.openapi_schema
     from fastapi.openapi.utils import get_openapi
 
     schema = get_openapi(title=app.title, version=app.version, description=app.description, routes=app.routes)
     schema.setdefault("components", {}).setdefault("securitySchemes", {})["ApiKeyAuth"] = api_key_scheme.model_dump(by_alias=True, exclude_none=True, mode="json")
+    # FastAPI emits OpenAPI 3.1's contentMediaType for UploadFile. RapidAPI's
+    # importer recognizes the widely-supported format=binary convention and
+    # renders it as a file-picker in its endpoint playground.
+    upload_schema = schema["components"]["schemas"]["Body_analyze_email_v1_analyze_post"]
+    upload_schema["properties"]["file"] = {
+        "type": "string",
+        "format": "binary",
+        "description": "An RFC 5322 .eml email file.",
+    }
     app.openapi_schema = schema
     return schema
 
