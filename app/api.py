@@ -9,10 +9,12 @@ from threading import Lock
 
 from fastapi import FastAPI, File, HTTPException, Request, Response, UploadFile
 from fastapi.openapi.models import APIKey, APIKeyIn
+from fastapi.responses import HTMLResponse
 from fast_mail_parser import ParseError
 
 from app.config import settings
 from app.email_parser import parse_email_content
+from app.legal import PRIVACY_PAGE, TERMS_PAGE
 from app.models import AnalysisResponse, ErrorResponse, HealthResponse
 
 API_VERSION = "v1"
@@ -76,7 +78,7 @@ async def log_requests(request: Request, call_next: Callable[[Request], Awaitabl
     started = time.perf_counter()
     # Health checks remain available to the hosting platform. All API routes can
     # be restricted to requests forwarded by RapidAPI's Runtime.
-    if settings.rapidapi_proxy_secret and request.url.path != "/health":
+    if settings.rapidapi_proxy_secret and request.url.path not in {"/health", "/privacy", "/terms"}:
         supplied_secret = request.headers.get("X-RapidAPI-Proxy-Secret", "")
         if not hmac.compare_digest(supplied_secret, settings.rapidapi_proxy_secret):
             response = Response(status_code=401, content='{"detail":{"code":"INVALID_PROXY_SECRET","message":"Request must be forwarded by the configured API gateway."}}', media_type="application/json")
@@ -89,6 +91,16 @@ async def log_requests(request: Request, call_next: Callable[[Request], Awaitabl
 @app.get("/health", response_model=HealthResponse, tags=["Operations"], summary="Service health")
 async def health_check() -> dict[str, object]:
     return {"status": "ok", "version": API_VERSION, "authentication_required": bool(settings.api_key)}
+
+
+@app.get("/privacy", response_class=HTMLResponse, include_in_schema=False)
+async def privacy_policy() -> str:
+    return PRIVACY_PAGE
+
+
+@app.get("/terms", response_class=HTMLResponse, include_in_schema=False)
+async def terms_of_service() -> str:
+    return TERMS_PAGE
 
 
 @app.post(

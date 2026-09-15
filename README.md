@@ -101,6 +101,8 @@ uv run python -m unittest discover -s tests -v
 
 Uploaded email bytes are parsed in memory and are not included in API responses or application logs. Structured logs record only request method, route, status, and duration. The service does not execute attachments or visit extracted URLs. See [SECURITY.md](SECURITY.md) for the release security and privacy policy.
 
+The deployed API also publishes its [privacy policy](/privacy) and [terms of service](/terms). For the Fly deployment, these are available at `https://anti-phishing.fly.dev/privacy` and `https://anti-phishing.fly.dev/terms`.
+
 ## Deterministic analysis
 
 The service performs no network lookups. It flags sender/Reply-To mismatches, deceptive or unsafe links, common social-engineering language, risky attachment names, and failed SPF, DKIM, or DMARC results reported in `Authentication-Results`. Each finding has a stable code, severity, evidence, and remediation.

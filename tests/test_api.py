@@ -190,6 +190,30 @@ class AnalyzeEndpointTests(unittest.TestCase):
         self.assertEqual(rejected.json()["detail"]["code"], "INVALID_PROXY_SECRET")
         self.assertEqual(accepted.status_code, 200)
 
+    def test_public_legal_pages_remain_available_in_rapidapi_mode(self) -> None:
+        rapidapi_settings = Settings(
+            api_key=None,
+            rapidapi_proxy_secret="rapid-secret",
+            max_upload_size=10 * 1024 * 1024,
+            rate_limit_enabled=False,
+            rate_limit_requests=60,
+            rate_limit_window_seconds=60,
+        )
+
+        async def send_request(path: str) -> httpx.Response:
+            transport = httpx.ASGITransport(app=app)
+            async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+                return await client.get(path)
+
+        with patch("app.api.settings", rapidapi_settings):
+            privacy = asyncio.run(send_request("/privacy"))
+            terms = asyncio.run(send_request("/terms"))
+
+        self.assertEqual(privacy.status_code, 200)
+        self.assertIn("Moonfall Software", privacy.text)
+        self.assertIn("moonfallsoftware@outlook.com", privacy.text)
+        self.assertEqual(terms.status_code, 200)
+
     def test_openapi_documents_api_key_and_error_responses(self) -> None:
         async def send_request() -> httpx.Response:
             transport = httpx.ASGITransport(app=app)
