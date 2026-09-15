@@ -116,12 +116,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "ApiKeyAuth": []
-          }
-        ]
+        }
       }
     }
   },
@@ -567,14 +562,6 @@
           "type"
         ],
         "title": "ValidationError"
-      }
-    },
-    "securitySchemes": {
-      "ApiKeyAuth": {
-        "type": "apiKey",
-        "description": "Required when `PHISHING_ANALYZER_API_KEY` is configured.",
-        "in": "header",
-        "name": "X-API-Key"
       }
     }
   }
